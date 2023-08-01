@@ -9,7 +9,7 @@ spec:
       paths:
       - backend:
           service:
-            name: svc-metabase
+            name: metabase
             port:
               name: metabase
         path: /

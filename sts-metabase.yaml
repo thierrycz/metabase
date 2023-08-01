@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: metabase2
+  name: sts-metabase
+spec:
+  replicas: 1
+  serviceName: svc-metabase
+  selector:
+    matchLabels:
+      app: metabase2
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: metabase2
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - |
+          set -x;
+          curl -o /plugins/csv.metabase-driver.jar http://applis-s3.stockage-ecs1-qvr.sii24.pole-emploi.intra:9020/x-da043-applis-s3/mythings/csv.metabase-driver.jar ; /app/run_metabase.sh
+        env:
+        - name: MB_JETTY_HOST
+          value: 0.0.0.0
+        - name: MB_JETTY_PORT
+          value: "3000"
+        - name: MB_DB_TYPE
+          value: h2
+        - name: MB_PASSWORD_COMPLEXITY
+          value: normal
+        - name: MB_PASSWORD_LENGTH
+          value: "6"
+        - name: JAVA_TIMEZONE
+          value: UTC
+        - name: MB_EMOJI_IN_LOGS
+          value: "true"
+        image: metabase/metabase:v0.44.7.3
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 6
+          httpGet:
+            path: /
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 120
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 30
+        name: metabase
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 1Gi
+        volumeMounts:
+        - name: vol-metabase
+          mountPath: /metabase.db
+  volumeClaimTemplates:
+  - metadata:
+      name: vol-metabase
+    spec:
+      accessModes: 
+      - ReadWriteOnce
+      # storageClassName: "my-storage-class"
+      storageClassName: sc-defaut-01
+      resources:
+        requests:
+          storage: 1Gi
