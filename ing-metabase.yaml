@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ing-metabase
+spec:
+  rules:
+  - host: test-metabase.dev02-sddc.k8s.pole-emploi.intra
+    http:
+      paths:
+      - backend:
+          service:
+            name: metabase
+            port:
+              name: metabase
+        path: /
+        pathType: ImplementationSpecific
